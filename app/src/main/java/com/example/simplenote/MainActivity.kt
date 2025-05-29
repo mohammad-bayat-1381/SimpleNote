@@ -18,6 +18,8 @@ import com.example.simplenote.data.repository.AuthRepository
 import com.example.simplenote.data.repository.NoteRepository
 import com.example.simplenote.presentation.auth.AuthViewModel
 import com.example.simplenote.presentation.auth.AuthViewModelFactory
+import com.example.simplenote.presentation.home.AddNoteViewModel
+import com.example.simplenote.presentation.home.AddNoteViewModelFactory
 import com.example.simplenote.presentation.home.HomeViewModel
 import com.example.simplenote.presentation.home.HomeViewModelFactory
 import com.example.simplenote.presentation.navigation.AppScreens
@@ -41,6 +43,9 @@ class MainActivity : ComponentActivity() {
                 val noteRepository = NoteRepository(RetrofitInstance.noteApi)
                 val homeViewModelFactory = HomeViewModelFactory(noteRepository)
                 val homeViewModel = homeViewModelFactory.create(HomeViewModel::class.java)
+
+                val addNoteViewModel = AddNoteViewModelFactory(noteRepository).create(
+                    AddNoteViewModel::class.java)
 
                 NavHost(navController = navController, startDestination = AppScreens.Onboarding.route) {
                     composable(AppScreens.Onboarding.route) {
@@ -83,9 +88,15 @@ class MainActivity : ComponentActivity() {
                         NoteDetailScreen(noteId = noteId)
                     }
                     composable(AppScreens.AddNote.route) {
-                        AddNoteScreen(onNoteSaved = {
-                            navController.popBackStack()
-                        })
+                        AddNoteScreen(
+                            viewModel = addNoteViewModel,
+                            onNoteSaved = {
+                                navController.popBackStack()
+                            },
+                            onBackPressed = {
+                                navController.popBackStack()
+                            }
+                        )
                     }
                 }
             }

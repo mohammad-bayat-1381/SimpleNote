@@ -1,4 +1,6 @@
 package com.example.simplenote.domain.model
 
-class NoteRequest {
-}
+data class NoteRequest(
+    val title: String,
+    val description: String
+)

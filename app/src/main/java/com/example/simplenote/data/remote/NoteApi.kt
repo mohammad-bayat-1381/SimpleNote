@@ -1,11 +1,15 @@
 package com.example.simplenote.data.remote
 
 import com.example.simplenote.domain.model.Note
-import retrofit2.http.GET
+import com.example.simplenote.domain.model.NoteRequest
+import retrofit2.http.*
 
 interface NoteApi {
     @GET("/api/notes/")
     suspend fun getNotes(): NoteListResponse
+
+    @POST("/api/notes/")
+    suspend fun createNote(@Body note: NoteRequest): Note
 }
 
 data class NoteListResponse(
