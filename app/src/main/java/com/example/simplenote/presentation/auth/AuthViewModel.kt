@@ -12,10 +12,10 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
 
-    fun login(email: String, password: String) {
+    fun login(username: String, password: String) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
-            val token = repository.login(email, password)
+            val token = repository.login(username, password)
             if (token != null) {
                 _authState.value = AuthState.Success(token)
             } else {
@@ -23,6 +23,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
             }
         }
     }
+
 
     fun register(
         firstName: String,

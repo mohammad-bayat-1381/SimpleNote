@@ -9,17 +9,32 @@ import com.example.simplenote.presentation.auth.AuthState
 import com.example.simplenote.presentation.auth.AuthViewModel
 
 @Composable
-fun RegisterScreen(viewModel: AuthViewModel, onLoginClick: () -> Unit) {
+fun RegisterScreen(
+    viewModel: AuthViewModel,
+    onLoginClick: () -> Unit,
+    onRegisterSuccess: () -> Unit
+) {
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var localError by remember { mutableStateOf("") }
 
     val state by viewModel.authState.collectAsState()
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    LaunchedEffect(state) {
+        if (state is AuthState.RegisterSuccess) {
+            viewModel.resetState()
+            onRegisterSuccess()
+        }
+    }
+
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
+
         Text("Register", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -33,7 +48,12 @@ fun RegisterScreen(viewModel: AuthViewModel, onLoginClick: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            if (password == confirmPassword) {
+            localError = ""
+            if (password != confirmPassword) {
+                localError = "Passwords do not match"
+            } else if (firstName.isBlank() || lastName.isBlank() || username.isBlank() || email.isBlank() || password.isBlank()) {
+                localError = "All fields are required"
+            } else {
                 viewModel.register(firstName, lastName, username, email, password)
             }
         }) {
@@ -47,10 +67,18 @@ fun RegisterScreen(viewModel: AuthViewModel, onLoginClick: () -> Unit) {
             Text("Already have an account? Login here")
         }
 
+        // Show any client-side form error
+        if (localError.isNotBlank()) {
+            Text(localError, color = MaterialTheme.colorScheme.error)
+        }
+
+        // Handle API feedback
         when (state) {
             is AuthState.Loading -> CircularProgressIndicator()
-            is AuthState.RegisterSuccess -> Text("Registration successful! Please log in.")
-            is AuthState.Error -> Text("Error: ${(state as AuthState.Error).message}", color = MaterialTheme.colorScheme.error)
+            is AuthState.Error -> Text(
+                text = "Error: ${(state as AuthState.Error).message}",
+                color = MaterialTheme.colorScheme.error
+            )
             else -> {}
         }
     }

@@ -9,8 +9,13 @@ import com.example.simplenote.presentation.auth.AuthState
 import com.example.simplenote.presentation.auth.AuthViewModel
 
 @Composable
-fun LoginScreen(viewModel: AuthViewModel, onRegister: () -> Unit) {
-    var email by remember { mutableStateOf("") }
+fun LoginScreen(
+    viewModel: AuthViewModel,
+    onRegister: () -> Unit,
+    onForgotPassword: () -> Unit,
+    onLoginSuccess: () -> Unit
+) {
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val state by viewModel.authState.collectAsState()
 
@@ -22,13 +27,15 @@ fun LoginScreen(viewModel: AuthViewModel, onRegister: () -> Unit) {
         Text("Let’s Login", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email Address") })
+        OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username") })
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") })
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { viewModel.login(email, password) }) {
+        Button(onClick = {
+            viewModel.login(username, password)
+        }) {
             Text("Login")
         }
 
@@ -36,9 +43,19 @@ fun LoginScreen(viewModel: AuthViewModel, onRegister: () -> Unit) {
             Text("Don’t have any account? Register here")
         }
 
+        TextButton(onClick = onForgotPassword) {
+            Text("Forgot your password?")
+        }
+
         when (state) {
             is AuthState.Loading -> CircularProgressIndicator()
-            is AuthState.Success -> Text("Access token: ${(state as AuthState.Success).token}")
+            is AuthState.Success -> {
+                Text("Access token: ${(state as AuthState.Success).token}")
+                // Trigger navigation on successful login
+                LaunchedEffect(Unit) {
+                    onLoginSuccess()
+                }
+            }
             is AuthState.Error -> Text("Error: ${(state as AuthState.Error).message}", color = MaterialTheme.colorScheme.error)
             else -> {}
         }

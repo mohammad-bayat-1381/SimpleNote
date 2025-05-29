@@ -1,9 +1,9 @@
 package com.example.simplenote.domain.model
 
 data class RegisterRequest(
-    val firstname: String,
-    val lastname: String,
     val username: String,
+    val password: String,
     val email: String,
-    val password: String
+    val first_name: String,
+    val last_name: String
 )
