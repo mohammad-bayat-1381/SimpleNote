@@ -75,17 +75,25 @@ class MainActivity : ComponentActivity() {
                         HomeScreen(
                             viewModel = homeViewModel,
                             onAddNoteClick = { navController.navigate(AppScreens.AddNote.route) },
-                            onSettingsClick = { navController.navigate(AppScreens.ResetPassword.route) }
+                            onSettingsClick = { navController.navigate(AppScreens.ResetPassword.route) },
+                            onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") }
                         )
+
                     }
                     composable(AppScreens.NoteList.route) {
                         NoteListScreen(onNoteClick = { noteId ->
                             navController.navigate("note_detail/$noteId")
                         })
                     }
-                    composable(AppScreens.NoteDetail.route) { backStackEntry ->
-                        val noteId = backStackEntry.arguments?.getString("noteId")
-                        NoteDetailScreen(noteId = noteId)
+                    composable("note_detail/{noteId}") { backStackEntry ->
+                        val noteId = backStackEntry.arguments?.getString("noteId")?.toIntOrNull()
+                        noteId?.let {
+                            NoteDetailScreen(
+                                noteId = it,
+                                viewModel = homeViewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
                     }
                     composable(AppScreens.AddNote.route) {
                         AddNoteScreen(
