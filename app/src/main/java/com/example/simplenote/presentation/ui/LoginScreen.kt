@@ -43,9 +43,9 @@ fun LoginScreen(
             Text("Don’t have any account? Register here")
         }
 
-        TextButton(onClick = onForgotPassword) {
-            Text("Forgot your password?")
-        }
+//        TextButton(onClick = onForgotPassword) {
+//            Text("Forgot your password?")
+//        }
 
         when (state) {
             is AuthState.Loading -> CircularProgressIndicator()

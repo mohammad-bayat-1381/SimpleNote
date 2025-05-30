@@ -24,4 +24,8 @@ class AddNoteViewModel(private val noteRepository: NoteRepository) : ViewModel()
             }
         }
     }
+
+    fun resetNoteCreated() {
+        _noteCreated.value = false
+    }
 }

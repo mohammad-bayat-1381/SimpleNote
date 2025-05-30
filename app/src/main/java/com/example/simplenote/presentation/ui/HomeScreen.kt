@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
@@ -17,6 +18,10 @@ import androidx.compose.ui.unit.dp
 import com.example.simplenote.R
 import com.example.simplenote.domain.model.Note
 import com.example.simplenote.presentation.home.HomeViewModel
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.lazy.rememberLazyListState
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,10 +32,19 @@ fun HomeScreen(
     onNoteClick: (noteId: Int) -> Unit
 ) {
     val notes by viewModel.notes.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isLastPage by viewModel.isLastPage.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        viewModel.fetchNotes()
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collectLatest { lastVisibleIndex ->
+                if (lastVisibleIndex == notes.lastIndex && !isLastPage && !isLoading) {
+                    viewModel.loadNextPage()
+                }
+            }
     }
 
     Scaffold(
@@ -51,16 +65,17 @@ fun HomeScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddNoteClick) {
+            FloatingActionButton(onClick = {
+                onAddNoteClick()
+            }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Note")
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-        ) {
+        Column(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()) {
+
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = {
@@ -74,18 +89,35 @@ fun HomeScreen(
                 singleLine = true
             )
 
-            if (notes.isEmpty()) {
+            if (notes.isEmpty() && !isLoading) {
                 EmptyState()
             } else {
-                LazyColumn {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = listState
+                ) {
                     items(notes) { note ->
                         NoteCard(note = note, onClick = { onNoteClick(note.id) })
+                    }
+
+                    if (isLoading) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun NoteCard(note: Note, onClick: () -> Unit) {

@@ -24,6 +24,7 @@ fun AddNoteScreen(
 
     LaunchedEffect(noteCreated) {
         if (noteCreated) {
+            viewModel.resetNoteCreated()
             onNoteSaved()
         }
     }
