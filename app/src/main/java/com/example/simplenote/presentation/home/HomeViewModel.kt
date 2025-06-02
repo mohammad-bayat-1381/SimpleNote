@@ -6,7 +6,11 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.simplenote.data.repository.NoteRepository
 import com.example.simplenote.domain.model.Note
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
@@ -14,40 +18,33 @@ class HomeViewModel(
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    val searchQuery: StateFlow<String> = _searchQuery
 
-    private val _forceRefresh = MutableStateFlow(false)
-
-    val notes: StateFlow<PagingData<Note>> = combine(
-        _searchQuery,
-        _forceRefresh
-    ) { query, _ ->
-        query
-    }.flatMapLatest { query ->
-        repository.getNotesPager(query).flow
-    }.cachedIn(viewModelScope)
-        .stateIn(viewModelScope, SharingStarted.Lazily, PagingData.empty())
+    val notes: Flow<PagingData<Note>> = _searchQuery
+        .debounce(300)
+        .flatMapLatest { query ->
+            repository.getNotesPager(query).flow
+        }
+        .cachedIn(viewModelScope)
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }
 
-    fun performSearch() {
-        _forceRefresh.value = !_forceRefresh.value // Toggle to force pager refresh
+    fun refreshNotes() {
+        // Create a copy of the current value to force refresh
+        _searchQuery.value = _searchQuery.value
     }
 
     fun deleteNote(noteId: Int) {
         viewModelScope.launch {
             try {
                 repository.deleteNote(noteId)
-                performSearch() // Refresh after deletion
+                refreshNotes()
             } catch (_: Exception) {
+                // Handle error
             }
         }
-    }
-
-    fun refreshNotes() {
-        performSearch() // Call after returning from add screen
     }
 
     suspend fun getNoteById(noteId: Int): Note? {

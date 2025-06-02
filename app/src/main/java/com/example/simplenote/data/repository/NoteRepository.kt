@@ -11,13 +11,23 @@ class NoteRepository(private val api: NoteApi) {
 //    suspend fun getNotes() = api.getNotes()
     suspend fun addNote(note: NoteRequest) = api.createNote(note)
     suspend fun deleteNote(noteId: Int) = api.deleteNote(noteId)
-    fun getNotesPager(query: String): Pager<Int, Note> {
-        return Pager(
-            config = PagingConfig(pageSize = 10),
-            pagingSourceFactory = { NotePagingSource(api, query) }
-        )
-    }
+//    fun getNotesPager(query: String): Pager<Int, Note> {
+//        return Pager(
+//            config = PagingConfig(pageSize = 10),
+//            pagingSourceFactory = { NotePagingSource(api, query) }
+//        )
+//    }
     suspend fun getNoteById(noteId: Int): Note {
         return api.getNoteById(noteId)
+    }
+    fun getNotesPager(query: String): Pager<Int, Note> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 10,
+                enablePlaceholders = false,
+                initialLoadSize = 10
+            ),
+            pagingSourceFactory = { NotePagingSource(api, query) }
+        )
     }
 }

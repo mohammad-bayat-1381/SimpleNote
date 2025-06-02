@@ -12,14 +12,21 @@ class NotePagingSource(
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Note> {
         val page = params.key ?: 1
-        val pageSize = params.loadSize
+        val pageSize = params.loadSize.coerceAtMost(10)  // Match server page size
 
         return try {
-            val response = api.filterNotes(
-                searchQuery = searchQuery,
-                page = page,
-                pageSize = pageSize
-            )
+            val response = if (searchQuery.isNotBlank()) {
+                api.filterNotes(
+                    searchQuery = searchQuery,
+                    page = page,
+                    pageSize = pageSize
+                )
+            } else {
+                api.getNotes(
+                    page = page,
+                    pageSize = pageSize
+                )
+            }
 
             LoadResult.Page(
                 data = response.results,

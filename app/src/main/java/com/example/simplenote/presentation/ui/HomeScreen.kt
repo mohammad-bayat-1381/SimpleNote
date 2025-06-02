@@ -1,9 +1,7 @@
 package com.example.simplenote.presentation.ui
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
@@ -14,18 +12,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.simplenote.domain.model.Note
 import com.example.simplenote.presentation.home.HomeViewModel
 
-@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
     onAddNoteClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    onNoteClick: (noteId: Int) -> Unit
+    onNoteClick: (Int) -> Unit
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val notes = viewModel.notes.collectAsLazyPagingItems()
@@ -48,9 +46,7 @@ fun HomeScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                onAddNoteClick()
-            }) {
+            FloatingActionButton(onClick = onAddNoteClick) {
                 Icon(Icons.Default.Add, contentDescription = "Add Note")
             }
         }
@@ -75,42 +71,46 @@ fun HomeScreen(
                     label = { Text("Search Notes") },
                     singleLine = true
                 )
-                IconButton(onClick = { viewModel.performSearch() }) {
+                IconButton(onClick = { viewModel.refreshNotes() }) {
                     Icon(Icons.Default.Search, contentDescription = "Search")
                 }
             }
 
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(notes.itemCount) { index ->
-                    val note = notes[index]
-                    note?.let {
-                        NoteCard(note = it, onClick = { onNoteClick(it.id) })
-                    }
-                }
-
-                notes.apply {
-                    when {
-                        loadState.refresh is LoadState.Loading -> {
-                            item { LoadingItem() }
-                        }
-                        loadState.append is LoadState.Loading -> {
-                            item { LoadingItem() }
-                        }
-                        loadState.refresh is LoadState.Error -> {
-                            val e = loadState.refresh as LoadState.Error
-                            item { ErrorItem(e.error.localizedMessage ?: "Unknown error") }
-                        }
-                        loadState.append is LoadState.Error -> {
-                            val e = loadState.append as LoadState.Error
-                            item { ErrorItem(e.error.localizedMessage ?: "Unknown error") }
-                        }
-                    }
-                }
-            }
+            NoteList(notes, onNoteClick)
         }
     }
 }
 
+@Composable
+fun NoteList(notes: LazyPagingItems<Note>, onNoteClick: (Int) -> Unit) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        // Corrected items handling
+        items(notes.itemCount) { index ->
+            val note = notes[index]
+            note?.let {
+                NoteCard(note = it, onClick = { onNoteClick(it.id) })
+            }
+        }
+
+        // Handle loading states
+        when {
+            notes.loadState.refresh is LoadState.Loading -> {
+                item { LoadingItem() }
+            }
+            notes.loadState.append is LoadState.Loading -> {
+                item { LoadingItem() }
+            }
+            notes.loadState.refresh is LoadState.Error -> {
+                val error = (notes.loadState.refresh as LoadState.Error).error
+                item { ErrorItem(error.localizedMessage ?: "Refresh failed") }
+            }
+            notes.loadState.append is LoadState.Error -> {
+                val error = (notes.loadState.append as LoadState.Error).error
+                item { ErrorItem(error.localizedMessage ?: "Load more failed") }
+            }
+        }
+    }
+}
 
 @Composable
 fun NoteCard(note: Note, onClick: () -> Unit) {
