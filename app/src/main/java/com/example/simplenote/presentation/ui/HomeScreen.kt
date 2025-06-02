@@ -1,28 +1,24 @@
 package com.example.simplenote.presentation.ui
 
-import androidx.compose.foundation.Image
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.simplenote.R
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.simplenote.domain.model.Note
 import com.example.simplenote.presentation.home.HomeViewModel
-import kotlinx.coroutines.launch
-import androidx.compose.foundation.lazy.rememberLazyListState
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -31,21 +27,8 @@ fun HomeScreen(
     onSettingsClick: () -> Unit,
     onNoteClick: (noteId: Int) -> Unit
 ) {
-    val notes by viewModel.notes.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val isLastPage by viewModel.isLastPage.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
-            .collectLatest { lastVisibleIndex ->
-                if (lastVisibleIndex == notes.lastIndex && !isLastPage && !isLoading) {
-                    viewModel.loadNextPage()
-                }
-            }
-    }
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val notes = viewModel.notes.collectAsLazyPagingItems()
 
     Scaffold(
         bottomBar = {
@@ -72,44 +55,54 @@ fun HomeScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier
-            .padding(padding)
-            .fillMaxSize()) {
-
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = {
-                    searchQuery = it
-                    viewModel.filterNotes(it)
-                },
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                label = { Text("Search Notes") },
-                singleLine = true
-            )
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChanged(it) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    label = { Text("Search Notes") },
+                    singleLine = true
+                )
+                IconButton(onClick = { viewModel.performSearch() }) {
+                    Icon(Icons.Default.Search, contentDescription = "Search")
+                }
+            }
 
-            if (notes.isEmpty() && !isLoading) {
-                EmptyState()
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    state = listState
-                ) {
-                    items(notes) { note ->
-                        NoteCard(note = note, onClick = { onNoteClick(note.id) })
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(notes.itemCount) { index ->
+                    val note = notes[index]
+                    note?.let {
+                        NoteCard(note = it, onClick = { onNoteClick(it.id) })
                     }
+                }
 
-                    if (isLoading) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
+                notes.apply {
+                    when {
+                        loadState.refresh is LoadState.Loading -> {
+                            item { LoadingItem() }
+                        }
+                        loadState.append is LoadState.Loading -> {
+                            item { LoadingItem() }
+                        }
+                        loadState.refresh is LoadState.Error -> {
+                            val e = loadState.refresh as LoadState.Error
+                            item { ErrorItem(e.error.localizedMessage ?: "Unknown error") }
+                        }
+                        loadState.append is LoadState.Error -> {
+                            val e = loadState.append as LoadState.Error
+                            item { ErrorItem(e.error.localizedMessage ?: "Unknown error") }
                         }
                     }
                 }
@@ -144,23 +137,25 @@ fun NoteCard(note: Note, onClick: () -> Unit) {
 }
 
 @Composable
-fun EmptyState() {
-    Column(
+fun LoadingItem() {
+    Box(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_empty),
-            contentDescription = "Empty"
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Start Your Journey", style = MaterialTheme.typography.headlineSmall)
-        Text(
-            "Every big step starts with a small step.\nNote your first idea and start your journey!",
-            textAlign = TextAlign.Center
-        )
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+fun ErrorItem(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = message, color = MaterialTheme.colorScheme.error)
     }
 }

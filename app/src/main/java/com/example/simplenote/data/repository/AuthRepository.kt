@@ -9,6 +9,7 @@ import retrofit2.HttpException
 import java.io.IOException
 import android.util.Log
 import com.example.simplenote.data.local.TokenManager
+import com.example.simplenote.domain.model.ChangePasswordRequest
 
 class AuthRepository(
     private val api: AuthService,
@@ -50,6 +51,19 @@ class AuthRepository(
         } catch (e: Exception) {
             Log.e("Register", "Registration exception: ${e.message}")
             false
+        }
+    }
+
+    suspend fun changePassword(oldPassword: String, newPassword: String): Result<Unit> {
+        return try {
+            val response = api.changePassword(ChangePasswordRequest(oldPassword, newPassword))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Change password failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

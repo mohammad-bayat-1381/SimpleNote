@@ -8,7 +8,10 @@ sealed class AppScreens(val route: String) {
     object NoteList  : AppScreens("note_list")
     object ResetPassword  : AppScreens("reset_password")
     object Home  : AppScreens("home")
+    object Settings  : AppScreens("settings")
+    object ChangePassword  : AppScreens("change_password")
     object NoteDetail : AppScreens("note_detail/{noteId}") {
         fun createRoute(noteId: String) = "note_detail/$noteId"
     }
+
 }

@@ -16,13 +16,19 @@ import com.example.simplenote.data.local.TokenManager
 import com.example.simplenote.data.remote.RetrofitInstance
 import com.example.simplenote.data.repository.AuthRepository
 import com.example.simplenote.data.repository.NoteRepository
+import com.example.simplenote.data.repository.SettingsRepository
 import com.example.simplenote.presentation.auth.AuthViewModel
 import com.example.simplenote.presentation.auth.AuthViewModelFactory
+import com.example.simplenote.presentation.auth.ChangePasswordViewModel
+import com.example.simplenote.presentation.auth.ChangePasswordViewModelFactory
 import com.example.simplenote.presentation.home.AddNoteViewModel
 import com.example.simplenote.presentation.home.AddNoteViewModelFactory
+import com.example.simplenote.presentation.ui.HomeScreen
 import com.example.simplenote.presentation.home.HomeViewModel
 import com.example.simplenote.presentation.home.HomeViewModelFactory
 import com.example.simplenote.presentation.navigation.AppScreens
+import com.example.simplenote.presentation.settings.SettingsViewModel
+import com.example.simplenote.presentation.settings.SettingsViewModelFactory
 import com.example.simplenote.presentation.ui.*
 import com.example.simplenote.ui.theme.SimpleNoteTheme
 
@@ -46,6 +52,13 @@ class MainActivity : ComponentActivity() {
 
                 val addNoteViewModel = AddNoteViewModelFactory(noteRepository).create(
                     AddNoteViewModel::class.java)
+
+                val settingsRepo = SettingsRepository(RetrofitInstance.api)
+                val settingsViewModel = SettingsViewModelFactory(settingsRepo).create(
+                    SettingsViewModel::class.java)
+
+                val changePasswordViewModel = ChangePasswordViewModelFactory(settingsRepo)
+                    .create(ChangePasswordViewModel::class.java)
 
                 NavHost(navController = navController, startDestination = AppScreens.Onboarding.route) {
                     composable(AppScreens.Onboarding.route) {
@@ -75,7 +88,7 @@ class MainActivity : ComponentActivity() {
                         HomeScreen(
                             viewModel = homeViewModel,
                             onAddNoteClick = { navController.navigate(AppScreens.AddNote.route) },
-                            onSettingsClick = { navController.navigate(AppScreens.ResetPassword.route) },
+                            onSettingsClick = { navController.navigate(AppScreens.Settings.route) },
                             onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") }
                         )
 
@@ -104,6 +117,26 @@ class MainActivity : ComponentActivity() {
                             onBackPressed = {
                                 navController.popBackStack()
                             }
+                        )
+                    }
+                    composable(AppScreens.Settings.route) {
+                        SettingsScreen(
+                            viewModel = settingsViewModel,
+                            navController = navController,
+                            onLogoutConfirmed = {
+                                tokenManager.clearTokens()
+                                navController.navigate(AppScreens.Login.route) {
+                                    popUpTo(0)
+                                }
+                            }
+                        )
+                    }
+                    composable(AppScreens.ChangePassword.route) {
+                        ChangePasswordScreen(
+                            viewModel = changePasswordViewModel,
+                            onBack = { navController.navigate(AppScreens.Login.route) {
+                                popUpTo(AppScreens.Login.route) { inclusive = true }
+                            }}
                         )
                     }
                 }

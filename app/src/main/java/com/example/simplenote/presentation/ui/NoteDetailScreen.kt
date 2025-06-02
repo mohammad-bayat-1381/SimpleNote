@@ -9,7 +9,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.simplenote.domain.model.Note
 import com.example.simplenote.presentation.home.HomeViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun NoteDetailScreen(
@@ -17,8 +19,14 @@ fun NoteDetailScreen(
     viewModel: HomeViewModel,
     onBack: () -> Unit
 ) {
-    val note = viewModel.getNoteById(noteId)
+    var note by remember { mutableStateOf<Note?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    // Load note on first composition
+    LaunchedEffect(noteId) {
+        note = viewModel.getNoteById(noteId)
+    }
 
     Scaffold(
         topBar = {
@@ -44,14 +52,18 @@ fun NoteDetailScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            Text(text = "Title", style = MaterialTheme.typography.labelMedium)
-            Text(text = note?.title ?: "", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Content", style = MaterialTheme.typography.labelMedium)
-            Text(text = note?.description ?: "", style = MaterialTheme.typography.bodyLarge)
+            if (note != null) {
+                Text(text = "Title", style = MaterialTheme.typography.labelMedium)
+                Text(text = note!!.title, style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = "Content", style = MaterialTheme.typography.labelMedium)
+                Text(text = note!!.description, style = MaterialTheme.typography.bodyLarge)
+            } else {
+                CircularProgressIndicator()
+            }
         }
 
-        // Confirmation dialog for deletion
+        // Delete confirmation dialog
         if (showDeleteDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
@@ -60,9 +72,11 @@ fun NoteDetailScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            viewModel.deleteNote(noteId)
-                            showDeleteDialog = false
-                            onBack()
+                            scope.launch {
+                                viewModel.deleteNote(noteId)
+                                showDeleteDialog = false
+                                onBack()
+                            }
                         }
                     ) {
                         Text("Delete")

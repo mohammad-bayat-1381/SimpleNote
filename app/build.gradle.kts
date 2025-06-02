@@ -82,11 +82,17 @@ dependencies {
 
     // Room (local DB)
     implementation("androidx.room:room-runtime:2.6.1")
+    implementation(libs.androidx.paging.common.android)
     kapt("androidx.room:room-compiler:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
 
     // ViewModel for Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+
+    implementation ("androidx.paging:paging-runtime:3.1.1")
+    implementation ("androidx.paging:paging-compose:1.0.0-alpha20")
+    implementation ("androidx.paging:paging-compose:1.0.0-alpha20")
+
 
     // Testing
     testImplementation(libs.junit)

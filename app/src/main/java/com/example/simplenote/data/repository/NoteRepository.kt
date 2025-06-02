@@ -1,18 +1,23 @@
 package com.example.simplenote.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
 import com.example.simplenote.data.remote.NoteApi
-import com.example.simplenote.domain.model.FilterResponse
 import com.example.simplenote.domain.model.Note
 import com.example.simplenote.domain.model.NoteRequest
+import com.example.simplenote.presentation.home.NotePagingSource
 
 class NoteRepository(private val api: NoteApi) {
-    suspend fun getNotes() = api.getNotes()
-
+//    suspend fun getNotes() = api.getNotes()
     suspend fun addNote(note: NoteRequest) = api.createNote(note)
-
     suspend fun deleteNote(noteId: Int) = api.deleteNote(noteId)
-
-    suspend fun filterNotes(query: String): FilterResponse {
-        return api.filterNotes(query)
+    fun getNotesPager(query: String): Pager<Int, Note> {
+        return Pager(
+            config = PagingConfig(pageSize = 10),
+            pagingSourceFactory = { NotePagingSource(api, query) }
+        )
+    }
+    suspend fun getNoteById(noteId: Int): Note {
+        return api.getNoteById(noteId)
     }
 }

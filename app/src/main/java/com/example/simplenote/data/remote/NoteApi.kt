@@ -7,8 +7,19 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface NoteApi {
+
     @GET("/api/notes/")
-    suspend fun getNotes(): NoteListResponse
+    suspend fun getNotes(
+        @Query("page") page: Int,
+        @Query("page_size") pageSize: Int
+    ): NoteListResponse
+
+    @GET("/api/notes/filter")
+    suspend fun filterNotes(
+        @Query("search") searchQuery: String,
+        @Query("page") page: Int,
+        @Query("page_size") pageSize: Int
+    ): NoteListResponse
 
     @POST("/api/notes/")
     suspend fun createNote(@Body note: NoteRequest): Note
@@ -16,12 +27,10 @@ interface NoteApi {
     @DELETE("/api/notes/{id}/")
     suspend fun deleteNote(@Path("id") id: Int): Response<Unit>
 
-    @GET("/api/notes/filter")
-    suspend fun filterNotes(
-        @Query("search") searchQuery: String
-    ): FilterResponse
-
+    @GET("/api/notes/{id}/")
+    suspend fun getNoteById(@Path("id") id: Int): Note
 }
+
 
 data class NoteListResponse(
     val count: Int,
