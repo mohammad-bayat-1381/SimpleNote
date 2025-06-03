@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -56,25 +55,16 @@ fun HomeScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            Row(
+            // Removed search button - search works as-you-type
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = viewModel::onSearchQueryChanged,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.onSearchQueryChanged(it) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp),
-                    label = { Text("Search Notes") },
-                    singleLine = true
-                )
-                IconButton(onClick = { viewModel.refreshNotes() }) {
-                    Icon(Icons.Default.Search, contentDescription = "Search")
-                }
-            }
+                label = { Text("Search Notes") },
+                singleLine = true
+            )
 
             NoteList(notes, onNoteClick)
         }
@@ -84,7 +74,6 @@ fun HomeScreen(
 @Composable
 fun NoteList(notes: LazyPagingItems<Note>, onNoteClick: (Int) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        // Corrected items handling
         items(notes.itemCount) { index ->
             val note = notes[index]
             note?.let {

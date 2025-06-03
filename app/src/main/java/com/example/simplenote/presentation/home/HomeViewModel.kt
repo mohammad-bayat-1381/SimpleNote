@@ -6,11 +6,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.simplenote.data.repository.NoteRepository
 import com.example.simplenote.domain.model.Note
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
@@ -20,8 +16,13 @@ class HomeViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    val notes: Flow<PagingData<Note>> = _searchQuery
-        .debounce(300)
+    // Use a refresh trigger that increments on each refresh
+    private val _refreshTrigger = MutableStateFlow(0)
+
+    val notes: Flow<PagingData<Note>> = combine(
+        _searchQuery.debounce(300),  // 300ms debounce for search-as-you-type
+        _refreshTrigger
+    ) { query, _ -> query }
         .flatMapLatest { query ->
             repository.getNotesPager(query).flow
         }
@@ -31,9 +32,9 @@ class HomeViewModel(
         _searchQuery.value = query
     }
 
+    // Proper refresh mechanism
     fun refreshNotes() {
-        // Create a copy of the current value to force refresh
-        _searchQuery.value = _searchQuery.value
+        _refreshTrigger.value++ // Increment to trigger refresh
     }
 
     fun deleteNote(noteId: Int) {

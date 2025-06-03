@@ -113,6 +113,7 @@ class MainActivity : ComponentActivity() {
                             viewModel = addNoteViewModel,
                             onNoteSaved = {
                                 navController.popBackStack()
+                                homeViewModel.refreshNotes()
                             },
                             onBackPressed = {
                                 navController.popBackStack()

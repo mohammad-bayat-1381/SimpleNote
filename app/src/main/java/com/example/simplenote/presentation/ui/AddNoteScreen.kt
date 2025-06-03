@@ -64,7 +64,10 @@ fun AddNoteScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { viewModel.addNote(title, content) },
+                onClick = {
+                    viewModel.addNote(title, content)
+                    onNoteSaved() // Immediately trigger refresh
+                },
                 modifier = Modifier.align(Alignment.End)
             ) {
                 Text("Save Note")

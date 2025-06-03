@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class AddNoteViewModel(private val noteRepository: NoteRepository) : ViewModel() {
+class AddNoteViewModel(
+    private val noteRepository: NoteRepository
+) : ViewModel() {
 
     private val _noteCreated = MutableStateFlow(false)
     val noteCreated: StateFlow<Boolean> = _noteCreated
@@ -19,7 +21,6 @@ class AddNoteViewModel(private val noteRepository: NoteRepository) : ViewModel()
                 noteRepository.addNote(NoteRequest(title, description))
                 _noteCreated.value = true
             } catch (e: Exception) {
-                // Log or handle error
                 _noteCreated.value = false
             }
         }
