@@ -53,4 +53,15 @@ class HomeViewModel(
             null
         }
     }
+
+    fun updateNote(id: Int, title: String, description: String) {
+        viewModelScope.launch {
+            try {
+                repository.updateNote(id, title, description)
+                // optionally trigger refresh here
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 }

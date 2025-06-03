@@ -5,6 +5,7 @@ import androidx.paging.PagingConfig
 import com.example.simplenote.data.remote.NoteApi
 import com.example.simplenote.domain.model.Note
 import com.example.simplenote.domain.model.NoteRequest
+import com.example.simplenote.domain.model.UpdateNoteRequest
 import com.example.simplenote.presentation.home.NotePagingSource
 
 class NoteRepository(private val api: NoteApi) {
@@ -30,4 +31,9 @@ class NoteRepository(private val api: NoteApi) {
             pagingSourceFactory = { NotePagingSource(api, query) }
         )
     }
+
+    suspend fun updateNote(id: Int, title: String, description: String) {
+        api.updateNote(id, UpdateNoteRequest(title, description))
+    }
+
 }

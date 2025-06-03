@@ -3,6 +3,7 @@ package com.example.simplenote.data.remote
 import com.example.simplenote.domain.model.FilterResponse
 import com.example.simplenote.domain.model.Note
 import com.example.simplenote.domain.model.NoteRequest
+import com.example.simplenote.domain.model.UpdateNoteRequest
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -29,6 +30,14 @@ interface NoteApi {
 
     @GET("/api/notes/{id}/")
     suspend fun getNoteById(@Path("id") id: Int): Note
+
+    @PUT("notes/{id}/")
+    suspend fun updateNote(
+        @Path("id") id: Int,
+        @Body note: UpdateNoteRequest
+    ): Note
+
+
 }
 
 

@@ -21,27 +21,45 @@ fun NoteDetailScreen(
 ) {
     var note by remember { mutableStateOf<Note?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf(false) }
+    var editedTitle by remember { mutableStateOf("") }
+    var editedDescription by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    // Load note on first composition
     LaunchedEffect(noteId) {
         note = viewModel.getNoteById(noteId)
+        note?.let {
+            editedTitle = it.title
+            editedDescription = it.description
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(note?.title ?: "Note Detail") },
+                title = { Text(if (isEditing) "Edit Note" else note?.title ?: "Note Detail") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        showDeleteDialog = true
-                    }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete Note")
+                    if (isEditing) {
+                        TextButton(onClick = {
+                            scope.launch {
+                                viewModel.updateNote(noteId, editedTitle, editedDescription)
+                                onBack()
+                                viewModel.refreshNotes()
+                            }
+                        }) {
+                            Text("Save")
+                        }
+                    } else {
+                        IconButton(onClick = {
+                            showDeleteDialog = true
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Note")
+                        }
                     }
                 }
             )
@@ -53,22 +71,43 @@ fun NoteDetailScreen(
                 .padding(16.dp)
         ) {
             if (note != null) {
-                Text(text = "Title", style = MaterialTheme.typography.labelMedium)
-                Text(text = note!!.title, style = MaterialTheme.typography.titleLarge)
+                OutlinedTextField(
+                    value = editedTitle,
+                    onValueChange = { editedTitle = it },
+                    label = { Text("Title") },
+                    readOnly = !isEditing,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "Content", style = MaterialTheme.typography.labelMedium)
-                Text(text = note!!.description, style = MaterialTheme.typography.bodyLarge)
+
+                OutlinedTextField(
+                    value = editedDescription,
+                    onValueChange = { editedDescription = it },
+                    label = { Text("Description") },
+                    readOnly = !isEditing,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (!isEditing) {
+                    Button(onClick = { isEditing = true }) {
+                        Text("Edit")
+                    }
+                }
             } else {
                 CircularProgressIndicator()
             }
         }
 
-        // Delete confirmation dialog
         if (showDeleteDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text("Confirm Delete") },
-                text = { Text("Are you sure you want to delete this note? This action cannot be undone.") },
+                text = { Text("Are you sure you want to delete this note?") },
                 confirmButton = {
                     TextButton(
                         onClick = {
