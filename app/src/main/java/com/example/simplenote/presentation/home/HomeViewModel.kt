@@ -16,11 +16,10 @@ class HomeViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    // Use a refresh trigger that increments on each refresh
     private val _refreshTrigger = MutableStateFlow(0)
 
     val notes: Flow<PagingData<Note>> = combine(
-        _searchQuery.debounce(300),  // 300ms debounce for search-as-you-type
+        _searchQuery.debounce(300),
         _refreshTrigger
     ) { query, _ -> query }
         .flatMapLatest { query ->
@@ -32,9 +31,8 @@ class HomeViewModel(
         _searchQuery.value = query
     }
 
-    // Proper refresh mechanism
     fun refreshNotes() {
-        _refreshTrigger.value++ // Increment to trigger refresh
+        _refreshTrigger.value++
     }
 
     fun deleteNote(noteId: Int) {
@@ -43,7 +41,7 @@ class HomeViewModel(
                 repository.deleteNote(noteId)
                 refreshNotes()
             } catch (_: Exception) {
-                // Handle error
+                // Optionally log or handle error
             }
         }
     }

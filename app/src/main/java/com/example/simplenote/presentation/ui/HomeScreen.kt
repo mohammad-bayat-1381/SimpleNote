@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,7 +56,6 @@ fun HomeScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            // Removed search button - search works as-you-type
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = viewModel::onSearchQueryChanged,
@@ -63,13 +63,23 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(16.dp),
                 label = { Text("Search Notes") },
-                singleLine = true
+                singleLine = true,
+                trailingIcon = {
+                    if (searchQuery.isNotBlank()) {
+                        IconButton(onClick = {
+                            viewModel.onSearchQueryChanged("") // Clear search
+                        }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear")
+                        }
+                    }
+                }
             )
 
             NoteList(notes, onNoteClick)
         }
     }
 }
+
 
 @Composable
 fun NoteList(notes: LazyPagingItems<Note>, onNoteClick: (Int) -> Unit) {
@@ -86,13 +96,16 @@ fun NoteList(notes: LazyPagingItems<Note>, onNoteClick: (Int) -> Unit) {
             notes.loadState.refresh is LoadState.Loading -> {
                 item { LoadingItem() }
             }
+
             notes.loadState.append is LoadState.Loading -> {
                 item { LoadingItem() }
             }
+
             notes.loadState.refresh is LoadState.Error -> {
                 val error = (notes.loadState.refresh as LoadState.Error).error
                 item { ErrorItem(error.localizedMessage ?: "Refresh failed") }
             }
+
             notes.loadState.append is LoadState.Error -> {
                 val error = (notes.loadState.append as LoadState.Error).error
                 item { ErrorItem(error.localizedMessage ?: "Load more failed") }
